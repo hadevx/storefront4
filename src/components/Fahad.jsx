@@ -4,14 +4,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/**
- * ✅ Single-item ecommerce version (ONLY the first image)
- * - One pinned "product reveal" section
- * - Ghost scroll spacer created in React
- * - Same GSAP behaviors: clip reveal, image scale/y, text lines in, blur/opacity, optional video slide, overlay fade
- * - You can remove the video block entirely if you want a pure static ecommerce hero
- */
-
 const WORK_ITEMS = [
   {
     id: "product-hero",
@@ -33,7 +25,6 @@ const WORK_ITEMS = [
       secondary: "View details",
       trust: ["Free shipping $75+", "Secure checkout", "30-day returns"],
     },
-    // Optional: keep ONE video for motion (delete this block + markup if not needed)
     videos: [
       {
         poster:
@@ -45,7 +36,7 @@ const WORK_ITEMS = [
   },
 ];
 
-function WorkItem({ item, index }) {
+function WorkItem({ item }) {
   return (
     <div className="work_item" data-work="item">
       <div className="work_image-wrapper">
@@ -59,7 +50,6 @@ function WorkItem({ item, index }) {
       </div>
 
       <div className="work_item-wrapper">
-        {/* Optional video row */}
         {item.videos?.length ? (
           <div className="work_video-wrapper">
             {item.videos.map((v, i) => (
@@ -113,7 +103,6 @@ function WorkItem({ item, index }) {
             ))}
           </div>
 
-          {/* Ecommerce block */}
           <div className="work_ecom">
             <div className="work_price" data-line>
               {item.meta?.price}
@@ -157,7 +146,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
 
     if (!items.length || ghosts.length !== items.length) return;
 
-    // Pin each item (only one here)
     gsap.set(items, {
       position: "fixed",
       top: 0,
@@ -185,17 +173,14 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         end: "+=75vh top",
       };
 
-      // Reveal item via clipPath
       triggers.push(
         gsap.to(el, { clipPath: "inset(0% 0 0 0)", scrollTrigger: stStarting }).scrollTrigger,
       );
 
-      // Image movement
       triggers.push(
         gsap.to(workImage, { yPercent: 10, scale: 1.2, scrollTrigger: stStarting }).scrollTrigger,
       );
 
-      // Text lines in
       triggers.push(
         gsap.from(lines, {
           yPercent: 125,
@@ -210,7 +195,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         }).scrollTrigger,
       );
 
-      // Image blur + fade
       triggers.push(
         gsap.to(workImage, {
           filter: "blur(10px)",
@@ -225,7 +209,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         }).scrollTrigger,
       );
 
-      // Optional videos slide
       if (videoContainers?.length) {
         triggers.push(
           gsap.from(videoContainers, {
@@ -243,7 +226,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         );
       }
 
-      // Final overlay + slight drift
       const stFinal = {
         trigger: ghost,
         scrub: true,
@@ -275,7 +257,7 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
 
   return (
     <>
-      {/* Hero */}
+      {/* HERO */}
       <section className="hero_section sticky">
         <div className="hero_container">
           <div className="footer_image-wrapper">
@@ -286,6 +268,7 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
               loading="lazy"
             />
           </div>
+
           <div className="hero_text">
             <div>
               Discover.
@@ -297,9 +280,8 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         </div>
       </section>
 
-      {/* Work section */}
+      {/* WORK */}
       <section className="work_section" data-work="section" ref={sectionRef}>
-        {/* Ghost spacer */}
         <div className="ghost_work-container" aria-hidden="true">
           {Array.from({ length: ghostCount }).map((_, i) => (
             <div
@@ -312,40 +294,40 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         </div>
 
         <div className="work_container">
-          {WORK_ITEMS.map((item, idx) => (
-            <WorkItem item={item} index={idx} key={item.id} />
+          {WORK_ITEMS.map((item) => (
+            <WorkItem item={item} key={item.id} />
           ))}
         </div>
       </section>
-
-      {/* Footer */}
-      {/*    <section className="footer_section">
-        <div className="footer_container">
-          <div className="footer_image-wrapper">
-            <img
-              src="https://moussamamadou.github.io/scroll-trigger-gsap-section/images/pexels-cottonbro-8718345_11zon_11zon_11zon.jpg"
-              alt="footer"
-              className="footer_image"
-              loading="lazy"
-            />
-          </div>
-          <div className="footer_text">
-            <div>
-              Thanks for
-              <br />
-              <span className="color-0">shopping </span>
-              with us.
-            </div>
-          </div>
-        </div>
-      </section> */}
     </>
   );
 }
 
 /**
- * Optional CSS additions (put in your stylesheet):
+ * ✅ Add this to your CSS file (IMPORTANT for mobile center):
  *
+ * .hero_text {
+ *   position: absolute;
+ *   inset: 0;
+ *   display: flex;
+ *   align-items: center;
+ *   justify-content: center;
+ *   text-align: center;
+ *   pointer-events: none;
+ * }
+ *
+ * .hero_text > div { line-height: 1.05; }
+ *
+ * @media (min-width: 768px) {
+ *   .hero_text {
+ *     justify-content: flex-start;
+ *     align-items: flex-start;
+ *     text-align: left;
+ *     padding: 4rem;
+ *   }
+ * }
+ *
+ * // Optional ecommerce styles:
  * .work_ecom { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
  * .work_price { font-size: 1.4rem; letter-spacing: 0.02em; opacity: 0.95; }
  * .work_actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
