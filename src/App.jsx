@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
+import NewArrivals from "./pages/newArrivals/NewArrivals";
 
 function App() {
   const userInfo = useSelector((state) => state.auth.userInfo);
@@ -33,6 +34,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/product/:productId" element={<Product />} />
       <Route path="/all-products" element={<AllProducts />} />
+      <Route path="/new-arrivals" element={<NewArrivals />} />
       <Route path="/category/:id" element={<ProductByCategory />} />
       <Route path="/payment/callback" element={<PaymentCallback />} /> {/* Add this */}
       <Route path="/cart" element={<Cart />} />

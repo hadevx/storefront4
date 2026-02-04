@@ -67,7 +67,7 @@ function Home() {
         {/* <HeroSection8 /> */}
         <FeaturedProducts products={products} isLoading={isLoading} />
         <CollectionStrip />
-        <HeritageSection />
+        {/* <HeritageSection /> */}
       </SmoothScroll>
       {/* <MaterialsSection /> */}
       {/* <X /> */}

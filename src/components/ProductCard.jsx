@@ -44,8 +44,9 @@ export default function ProductCard({ product, index = 0 }) {
         className="group block h-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}>
-        {/* Image block: BIG + NO extra margins */}
+        {/* IMAGE (mobile: overlays live INSIDE image) */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+          {/* Primary */}
           <img
             src={primaryImage}
             alt={name}
@@ -55,6 +56,7 @@ export default function ProductCard({ product, index = 0 }) {
             }`}
           />
 
+          {/* Hover */}
           <img
             src={hoverImage}
             alt={`${name} alternate view`}
@@ -64,20 +66,31 @@ export default function ProductCard({ product, index = 0 }) {
             }`}
           />
 
-          {/* Optional subtle overlay (no fake spacing) */}
-          <motion.div
-            initial={false}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.25 }}
-            className="absolute inset-0"
-            style={{
-              boxShadow: "inset 0 0 60px rgba(0,0,0,0.10)",
-            }}
-          />
+          {/* gradient for readability */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 via-black/10 to-transparent md:hidden" />
+
+          {/* MOBILE overlay text INSIDE image */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/85">
+              {String(category)}
+            </p>
+            <div className="mt-1 flex items-end justify-between gap-2">
+              <h3 className="line-clamp-2 truncate font-serif text-base leading-tight text-white">
+                {name}
+              </h3>
+              <div className="shrink-0 text-[12px] font-semibold text-white/95">
+                {product?.hasDiscount ? (
+                  <span>{price.toFixed(3)} KD</span>
+                ) : (
+                  <span>{price.toFixed(3)} KD</span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Text: compact padding so grid stays tight */}
-        <div className="px-3 py-3 space-y-1">
+        {/* DESKTOP text BELOW image */}
+        <div className="hidden px-3 py-3 space-y-1 md:block">
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             {String(category)}
           </p>

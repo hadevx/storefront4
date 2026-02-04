@@ -6,7 +6,6 @@ import Reveal from "./Reveal";
 import { Link } from "react-router-dom";
 import Loader from "./Loader";
 import { ArrowRight, Sparkles } from "lucide-react";
-import clsx from "clsx";
 
 const container = {
   hidden: { opacity: 0 },
@@ -25,7 +24,6 @@ const item = {
 
 export default function FeaturedProducts({ products, isLoading }) {
   const items = useMemo(() => (Array.isArray(products) ? products : []), [products]);
-  console.log(products);
   if (isLoading) return <Loader />;
 
   const shown = items.slice(0, 8);
@@ -125,10 +123,9 @@ export default function FeaturedProducts({ products, isLoading }) {
               ))}
             </motion.div>
 
-            {/* Bottom CTA (clean editorial card) */}
+            {/* Bottom CTA */}
             <div className="mt-12 lg:mt-20 px-2">
               <div className="relative overflow-hidden bg-white ring-1 ring-black/10">
-                {/* subtle grain */}
                 <div
                   aria-hidden
                   className="pointer-events-none absolute inset-0 opacity-[0.08]"
@@ -139,7 +136,6 @@ export default function FeaturedProducts({ products, isLoading }) {
                 />
 
                 <div className="relative flex flex-col gap-8 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-10 md:py-10">
-                  {/* Copy */}
                   <div className="max-w-xl">
                     <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
                       Full collection
@@ -155,7 +151,6 @@ export default function FeaturedProducts({ products, isLoading }) {
                     </p>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Link
                       to="/all-products"
