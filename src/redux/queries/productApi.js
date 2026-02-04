@@ -45,6 +45,11 @@ export const productApi = apiSlice.injectEndpoints({
         url: "/api/products/latest",
       }),
     }),
+    getFeaturedProducts: builder.query({
+      query: () => ({
+        url: "/api/products/featured",
+      }),
+    }),
     getCategoriesTree: builder.query({
       query: () => ({
         url: "/api/category/tree",
@@ -77,4 +82,5 @@ export const {
   useGetAllProductsQuery,
   useFetchProductsByIdsMutation,
   useGetMainCategoriesWithCountsQuery,
+  useGetFeaturedProductsQuery,
 } = productApi;

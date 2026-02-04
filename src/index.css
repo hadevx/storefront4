@@ -153,11 +153,11 @@ body {
 }
 
 .hero_container {
-  justify-content: space-between;
-  align-items: flex-end;
   height: 100vh;
-  display: flex;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* ✅ center everything */
 }
 
 .color-0 {
@@ -265,18 +265,19 @@ body {
 .hero_text {
   color: #fff;
   text-transform: uppercase;
-  flex: 1;
-  justify-content: flex-start;
-  align-items: center;
-  padding-bottom: 4vw;
-  padding-left: 4vw;
-  padding-right: 4vw;
+
+  position: absolute;
+  inset: 0; /* ✅ fill container */
+  display: flex;
+  align-items: center; /* ✅ vertical center */
+  justify-content: center; /* ✅ horizontal center */
+  text-align: left;
+
+  padding: 0; /* ✅ remove left padding that pushes it */
   font-family: Spacegrotesk, sans-serif;
   font-size: 12.5vw;
   font-weight: 500;
   line-height: 0.9;
-  display: flex;
-  position: relative;
 }
 
 .work_image {

@@ -1,10 +1,11 @@
+// FeaturedProducts.jsx
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
 import Reveal from "./Reveal";
 import { Link } from "react-router-dom";
 import Loader from "./Loader";
-import { ArrowRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
 const container = {
@@ -22,19 +23,9 @@ const item = {
   },
 };
 
-/**
- * FeaturedProducts – LIGHT / editorial enhancement:
- * - Light base + subtle paper grid
- * - Softer shadows + neutral borders
- * - Serif headline + muted copy
- * - CTA matches clean editorial style
- *
- * NOTE: Your ProductCard is currently dark/glass. It will still render,
- * but for a fully "light" look, consider a light ProductCard variant too.
- */
 export default function FeaturedProducts({ products, isLoading }) {
   const items = useMemo(() => (Array.isArray(products) ? products : []), [products]);
-
+  console.log(products);
   if (isLoading) return <Loader />;
 
   const shown = items.slice(0, 8);
@@ -67,12 +58,11 @@ export default function FeaturedProducts({ products, isLoading }) {
         }}
       />
 
-      <div className="relative mx-auto max-w-6xl px-6 py-14 lg:py-20">
+      <div className="relative mx-auto max-w-6xl lg:max-w-full lg:px-5 px-0 py-14 lg:py-20">
         {/* Header */}
         <Reveal>
-          <div className="mb-10 flex flex-col gap-6 lg:mb-14 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mb-10 flex flex-col px-2 gap-6 lg:mb-14 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              {/* pill */}
               <div className="inline-flex items-center gap-2 rounded-full bg-foreground/[0.04] px-3 py-1 text-xs text-foreground/70 ring-1 ring-foreground/10">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                 Featured • Top picks
@@ -92,7 +82,6 @@ export default function FeaturedProducts({ products, isLoading }) {
         {/* Content */}
         {shown.length === 0 ? (
           <div className="relative overflow-hidden rounded-[28px] bg-white/70 p-10 text-center ring-1 ring-foreground/10 backdrop-blur">
-            {/* light grain */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-multiply"
@@ -122,9 +111,9 @@ export default function FeaturedProducts({ products, isLoading }) {
           </div>
         ) : (
           <>
-            {/* Grid */}
+            {/* Grid: BIG images + NO spaces */}
             <motion.div
-              className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4 lg:gap-6"
+              className="grid grid-cols-2 gap-0 md:grid-cols-3 lg:grid-cols-4"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
@@ -137,44 +126,48 @@ export default function FeaturedProducts({ products, isLoading }) {
             </motion.div>
 
             {/* Bottom CTA (clean editorial card) */}
-            <div className="mt-10 lg:mt-14">
-              <div className="relative overflow-hidden rounded-[28px] bg-white/70 ring-1 ring-foreground/10 backdrop-blur">
-                {/* light grain */}
+            <div className="mt-12 lg:mt-20 px-2">
+              <div className="relative overflow-hidden bg-white ring-1 ring-black/10">
+                {/* subtle grain */}
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 opacity-[0.10] mix-blend-multiply"
+                  className="pointer-events-none absolute inset-0 opacity-[0.08]"
                   style={{
                     backgroundImage:
                       "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%220.35%22/%3E%3C/svg%3E')",
                   }}
                 />
 
-                <div className="relative flex flex-col gap-4 p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Want more options?</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Open the full catalog and find your next favorite.
+                <div className="relative flex flex-col gap-8 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-10 md:py-10">
+                  {/* Copy */}
+                  <div className="max-w-xl">
+                    <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+                      Full collection
+                    </p>
+
+                    <h3 className="mt-3 font-serif text-2xl leading-tight text-foreground">
+                      Explore the complete catalog
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      Discover all styles, seasonal drops, and timeless essentials curated for
+                      effortless everyday wear.
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Link
                       to="/all-products"
-                      className={clsx(
-                        "inline-flex items-center justify-center rounded-2xl bg-foreground px-5 py-3 text-sm font-semibold text-background",
-                        "border border-black hover:opacity-95 transition group",
-                      )}>
+                      className="group inline-flex items-center justify-center border border-foreground bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90">
                       View all products
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
 
                     <Link
                       to="/all-products"
-                      className={clsx(
-                        "inline-flex items-center justify-center rounded-2xl bg-transparent px-5 py-3 text-sm font-semibold text-foreground",
-                        "ring-1 ring-foreground/12 hover:bg-foreground/[0.04] transition group",
-                      )}>
-                      Explore lookbook
+                      className="group inline-flex items-center justify-center border border-foreground/20 px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/5">
+                      Browse lookbook
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </div>

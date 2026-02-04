@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Reveal from "./Reveal";
 import {
   useGetAllProductsQuery,
@@ -6,9 +6,10 @@ import {
   useGetMainCategoriesWithCountsQuery,
 } from "../redux/queries/productApi";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Layers, Heart } from "lucide-react";
+import { ArrowLeft, ArrowRight, Heart } from "lucide-react";
 import { motion, useMotionValue, animate } from "framer-motion";
 import clsx from "clsx";
+import gsap from "gsap";
 
 const formatLabel = (name = "") => String(name).trim() || "Unknown";
 
@@ -17,12 +18,11 @@ function clamp(n, min, max) {
 }
 
 /**
- * CollectionStrip – consistent with ClothingHero / FeaturedProducts
- * - Same dark base (neutral-950)
- * - Same dotted grid background + vignette/glow layers
- * - Same pill styling (white/5 + ring)
- * - No dots
- * - Controlled carousel (spring + swipe) with glass cards
+ * ENHANCED CollectionStrip
+ * - Adds luxury animated SVG hairlines (very subtle)
+ * - Adds GSAP hover parallax (image + sheen) on cards
+ * - Adds snap-to-card on resize and better drag end snapping
+ * - Keeps your dark hero-consistent design
  */
 export function CollectionStrip() {
   const { data: products } = useGetAllProductsQuery();
@@ -57,7 +57,6 @@ export function CollectionStrip() {
 
   const hasMany = categories.length > 1;
 
-  // controlled index
   const [page, setPage] = useState(0);
   const maxPage = Math.max(0, categories.length - 1);
 
@@ -69,9 +68,9 @@ export function CollectionStrip() {
   useEffect(() => {
     const setByBp = () => {
       const w = window.innerWidth;
-      if (w >= 1024) setCardW(420);
-      else if (w >= 640) setCardW(360);
-      else setCardW(300);
+      if (w >= 1024) setCardW(460);
+      else if (w >= 640) setCardW(380);
+      else setCardW(320);
     };
     setByBp();
     window.addEventListener("resize", setByBp);
@@ -87,13 +86,25 @@ export function CollectionStrip() {
     return () => controls.stop();
   }, [page, cardW, x]);
 
+  // keep page valid if categories count changes
+  useEffect(() => {
+    setPage((p) => clamp(p, 0, maxPage));
+  }, [maxPage]);
+
   // swipe feel
   const swipePower = (offset, velocity) => Math.abs(offset) * velocity;
   const swipeConfidenceThreshold = 8000;
 
+  // snap helper
+  const snapToNearest = () => {
+    const current = x.get();
+    const nearest = Math.round(Math.abs(current) / (cardW + gap));
+    setPage(clamp(nearest, 0, maxPage));
+  };
+
   return (
     <section dir="ltr" className="relative w-full overflow-hidden bg-neutral-950 text-white">
-      {/* Background dotted grid (same as hero) */}
+      {/* Background dotted grid */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-60"
@@ -104,18 +115,22 @@ export function CollectionStrip() {
           backgroundPosition: "0 0",
         }}
       />
-      {/* Vignette + glow (match hero) */}
+
+      {/* Vignette + glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(900px 520px at 55% 45%, rgba(255,255,255,0.07), transparent 60%), radial-gradient(700px 520px at 40% 60%, rgba(249,115,22,0.12), transparent 55%), radial-gradient(900px 520px at 50% 65%, rgba(0,0,0,0.2), rgba(0,0,0,0.8) 70%)",
+            "radial-gradient(900px 520px at 55% 45%, rgba(255,255,255,0.07), transparent 60%), radial-gradient(700px 520px at 40% 60%, rgba(249,115,22,0.12), transparent 55%), radial-gradient(900px 520px at 50% 65%, rgba(0,0,0,0.2), rgba(0,0,0,0.85) 70%)",
         }}
       />
 
+      {/* Luxury hairline SVG */}
+      <LuxuryHairlines />
+
       <Reveal>
-        <div className="relative mx-auto max-w-6xl px-6 py-14 lg:py-20">
+        <div className="relative mx-auto max-w-7xl px-6 py-14 lg:py-32">
           {/* Header */}
           <div className="mb-8 flex flex-col gap-5 lg:mb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
@@ -133,7 +148,7 @@ export function CollectionStrip() {
               </p>
             </div>
 
-            {/* Arrows (no dots) */}
+            {/* Arrows */}
             {hasMany && (
               <div className="flex items-center gap-2">
                 <button
@@ -167,10 +182,6 @@ export function CollectionStrip() {
 
           {/* Carousel */}
           <div className="relative">
-            {/* Edge fades (match dark background) */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-12 bg-gradient-to-r from-neutral-950 to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-12 bg-gradient-to-l from-neutral-950 to-transparent" />
-
             <div className="relative overflow-hidden">
               <motion.div
                 className="flex gap-4"
@@ -182,11 +193,7 @@ export function CollectionStrip() {
                   const swipe = swipePower(offset.x, velocity.x);
                   if (swipe < -swipeConfidenceThreshold) next();
                   else if (swipe > swipeConfidenceThreshold) prev();
-                  else {
-                    const current = x.get();
-                    const nearest = Math.round(Math.abs(current) / (cardW + gap));
-                    setPage(clamp(nearest, 0, maxPage));
-                  }
+                  else snapToNearest();
                 }}>
                 {categories.map((c) => (
                   <button
@@ -204,7 +211,6 @@ export function CollectionStrip() {
             </div>
           </div>
 
-          {/* tiny footer line (same vibe as your sections) */}
           <div className="mt-8 flex items-center justify-between text-[10px] font-semibold text-white/45">
             <span>WEBSCHEMA</span>
             <span>★</span>
@@ -215,20 +221,105 @@ export function CollectionStrip() {
   );
 }
 
-/* ------------------------------ Card (Hero-consistent) ------------------------------ */
+/* ------------------------------ Luxury Hairlines (SVG) ------------------------------ */
+
+function LuxuryHairlines() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const glints = el.querySelectorAll("[data-glint]");
+    gsap.set(glints, { opacity: 0.12 });
+
+    const tl = gsap.timeline({ repeat: -1, defaults: { ease: "sine.inOut" } });
+    tl.to(glints, { x: 18, opacity: 0.28, duration: 3.6, stagger: 0.25 }, 0).to(
+      glints,
+      { x: 0, opacity: 0.12, duration: 3.6, stagger: 0.25 },
+      3.6,
+    );
+
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (mq?.matches) {
+      tl.pause(0);
+      gsap.set(glints, { opacity: 0.12, x: 0 });
+    }
+
+    return () => tl.kill();
+  }, []);
+
+  return (
+    <svg
+      ref={ref}
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 1200 600"
+      preserveAspectRatio="none"
+      aria-hidden="true">
+      <path d="M40 120 H1160" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none" />
+      <path d="M40 520 H1160" stroke="rgba(255,255,255,0.06)" strokeWidth="1" fill="none" />
+
+      <path
+        d="M0 260 C 260 214, 520 298, 780 248 S 1020 214, 1200 252"
+        stroke="rgba(255,255,255,0.09)"
+        strokeWidth="1"
+        fill="none"
+      />
+
+      <g data-glint>
+        <circle cx="520" cy="298" r="2.2" fill="rgba(255,255,255,0.28)" />
+        <circle cx="520" cy="298" r="12" fill="rgba(249,115,22,0.10)" />
+      </g>
+      <g data-glint>
+        <circle cx="880" cy="248" r="2.2" fill="rgba(255,255,255,0.25)" />
+        <circle cx="880" cy="248" r="12" fill="rgba(249,115,22,0.08)" />
+      </g>
+      <g data-glint>
+        <circle cx="1010" cy="252" r="2.2" fill="rgba(255,255,255,0.22)" />
+        <circle cx="1010" cy="252" r="12" fill="rgba(249,115,22,0.07)" />
+      </g>
+    </svg>
+  );
+}
+
+/* ------------------------------ Card (Enhanced) ------------------------------ */
 
 function HeroConsistentCategoryCard({ item }) {
   const metaText = item.from ? `From ${item.from}` : `${item.count} items`;
 
+  const cardRef = useRef(null);
+  const imgRef = useRef(null);
+  const sheenRef = useRef(null);
+
+  useEffect(() => {
+    // set initial
+    gsap.set(imgRef.current, { scale: 1.02 });
+    gsap.set(sheenRef.current, { xPercent: -120, opacity: 0.0 });
+  }, []);
+
+  const onEnter = () => {
+    gsap.to(imgRef.current, { scale: 1.06, duration: 0.7, ease: "power3.out" });
+    gsap.to(sheenRef.current, { xPercent: 120, opacity: 0.22, duration: 0.9, ease: "power2.out" });
+    gsap.to(cardRef.current, { y: -3, duration: 0.35, ease: "power2.out" });
+  };
+
+  const onLeave = () => {
+    gsap.to(imgRef.current, { scale: 1.02, duration: 0.7, ease: "power3.out" });
+    gsap.to(sheenRef.current, { xPercent: -120, opacity: 0.0, duration: 0.6, ease: "power2.out" });
+    gsap.to(cardRef.current, { y: 0, duration: 0.35, ease: "power2.out" });
+  };
+
   return (
     <div
+      ref={cardRef}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
       className={clsx(
         "group relative overflow-hidden rounded-[28px]",
         "bg-white/5 ring-1 ring-white/12 backdrop-blur-2xl",
         "shadow-[0_40px_120px_rgba(0,0,0,0.70)] transition",
-        "hover:-translate-y-0.5 hover:bg-white/7",
       )}>
-      {/* grain overlay like your other panels */}
+      {/* grain overlay */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.14] mix-blend-overlay"
@@ -239,17 +330,28 @@ function HeroConsistentCategoryCard({ item }) {
       />
 
       <div className="relative">
-        {/* image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
+            ref={imgRef}
             src={item.image}
             alt={item.label}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            className="absolute inset-0 h-full w-full object-cover"
             draggable={false}
             loading="lazy"
           />
 
-          {/* overlay consistent with hero */}
+          {/* luxury sheen */}
+          <div
+            ref={sheenRef}
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.12) 35%, rgba(249,115,22,0.08) 50%, rgba(255,255,255,0.10) 65%, transparent 100%)",
+              mixBlendMode: "screen",
+            }}
+          />
+
+          {/* overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
           <div className="absolute inset-0 shadow-[inset_0_-140px_180px_rgba(0,0,0,0.55)]" />
 

@@ -1,32 +1,15 @@
+// ProductCard.jsx
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-/**
- * ProductCard (React.js) – editorial / minimal like your reference:
- * - clean image block (no glass, no neon glow)
- * - crossfade to hover image
- * - category line (uppercase tracking)
- * - serif name + muted price
- *
- * Expects your product shape:
- * product._id
- * product.name
- * product.price
- * product.hasDiscount + discountedPrice
- * product.image[0].url (primary)
- * product.image[1].url (hover) OR product.hoverImage/url if you have it
- * product.category?.name OR product.category
- */
 export default function ProductCard({ product, index = 0 }) {
   const [isHovered, setIsHovered] = useState(false);
 
-  console.log(product);
   const id = product?._id;
-
   const name = product?.name || "Product";
+
   const category = useMemo(() => {
-    // try common shapes
     return (
       product?.category?.name ||
       product?.category?.title ||
@@ -42,7 +25,6 @@ export default function ProductCard({ product, index = 0 }) {
   const primaryImage =
     product?.image?.[0]?.url || product?.image?.url || product?.image || "/placeholder.svg";
 
-  // best-effort hover image
   const hoverImage =
     product?.hoverImage?.url ||
     product?.hoverImage ||
@@ -55,15 +37,15 @@ export default function ProductCard({ product, index = 0 }) {
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}>
+      transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+      className="h-full">
       <Link
         to={`/product/${id}`}
-        className="group block"
+        className="group block h-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}>
-        {/* Image block */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted mb-4">
-          {/* Primary */}
+        {/* Image block: BIG + NO extra margins */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <img
             src={primaryImage}
             alt={name}
@@ -73,7 +55,6 @@ export default function ProductCard({ product, index = 0 }) {
             }`}
           />
 
-          {/* Hover */}
           <img
             src={hoverImage}
             alt={`${name} alternate view`}
@@ -83,20 +64,23 @@ export default function ProductCard({ product, index = 0 }) {
             }`}
           />
 
-          {/* Hover shadow overlay */}
+          {/* Optional subtle overlay (no fake spacing) */}
           <motion.div
             initial={false}
             animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.10)]"
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0"
+            style={{
+              boxShadow: "inset 0 0 60px rgba(0,0,0,0.10)",
+            }}
           />
         </div>
 
-        {/* Text */}
-        <div className="space-y-1">
-          {/*   <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">
-            {product.category}
-          </p> */}
+        {/* Text: compact padding so grid stays tight */}
+        <div className="px-3 py-3 space-y-1">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {String(category)}
+          </p>
 
           <h3 className="font-serif text-lg leading-snug">{name}</h3>
 

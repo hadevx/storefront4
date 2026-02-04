@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import {
   useGetLatestProductsQuery,
   useGetCategoriesTreeQuery,
+  useGetFeaturedProductsQuery,
 } from "../../redux/queries/productApi";
 import Product from "../../components/Product";
 import ProductCategorySection from "../../components/ProductCategorySection";
@@ -35,7 +36,7 @@ import Hussain from "../../components/Hussain.jsx";
 import Fahad from "../../components/Fahad.jsx";
 
 function Home() {
-  const { data: products, isLoading, refetch } = useGetLatestProductsQuery();
+  const { data: products, isLoading, refetch } = useGetFeaturedProductsQuery();
 
   const prevStockRef = useRef([]);
   useEffect(() => {
