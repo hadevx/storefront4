@@ -75,7 +75,7 @@ export default function ProductCard({ product, index = 0 }) {
               {String(category)}
             </p>
             <div className="mt-1 flex items-end justify-between gap-2">
-              <h3 className="line-clamp-2 truncate font-serif text-base leading-tight text-white">
+              <h3 className="line-clamp-2 truncate font-serif text-sm leading-tight text-white">
                 {name}
               </h3>
               <div className="shrink-0 text-[12px] font-semibold text-white/95">

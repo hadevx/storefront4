@@ -19,20 +19,8 @@ const WORK_ITEMS = [
       "Unisex fit • XS–XXL",
       "Free returns • 30 days",
     ],
-    meta: {
-      price: "$129",
-      cta: "Shop now",
-      secondary: "View details",
-      trust: ["Free shipping $75+", "Secure checkout", "30-day returns"],
-    },
-    videos: [
-      {
-        poster:
-          "https://moussamamadou.github.io/scroll-trigger-gsap-section/videos/9430543-uhd_4096_2160_25fps-poster-00001.jpg",
-        mp4: "https://moussamamadou.github.io/scroll-trigger-gsap-section/videos/9430543-uhd_4096_2160_25fps-transcode.mp4",
-        webm: "https://moussamamadou.github.io/scroll-trigger-gsap-section/videos/9430543-uhd_4096_2160_25fps-transcode.webm",
-      },
-    ],
+
+    // ✅ videos removed
   },
 ];
 
@@ -50,27 +38,7 @@ function WorkItem({ item }) {
       </div>
 
       <div className="work_item-wrapper">
-        {item.videos?.length ? (
-          <div className="work_video-wrapper">
-            {item.videos.map((v, i) => (
-              <div className="work_video-container" data-work="video" key={i}>
-                <div className="work_video">
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    style={{ backgroundImage: `url("${v.poster}")` }}
-                    data-object-fit="cover">
-                    <source src={v.mp4} type="video/mp4" />
-                    <source src={v.webm} type="video/webm" />
-                  </video>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {/* ✅ videos removed */}
 
         <div className="work_text">
           <div className="work_text-title">
@@ -161,7 +129,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
 
       const lines = el.querySelectorAll("[data-line]");
       const workImage = el.querySelector('[data-work="image"]');
-      const videoContainers = el.querySelectorAll('[data-work="video"]');
       const overlay = el.querySelector('[data-work="item-overlay"]');
 
       gsap.set(workImage, { scale: 1.4, yPercent: 10 });
@@ -209,23 +176,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
         }).scrollTrigger,
       );
 
-      if (videoContainers?.length) {
-        triggers.push(
-          gsap.from(videoContainers, {
-            x: "100vw",
-            scrollTrigger: {
-              trigger: ghost,
-              scrub: true,
-              start: "0 top",
-              end: "65% top",
-              onLeave: () => {
-                gsap.set(overlay, { display: "flex", opacity: 0 });
-              },
-            },
-          }).scrollTrigger,
-        );
-      }
-
       const stFinal = {
         trigger: ghost,
         scrub: true,
@@ -236,12 +186,6 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
       triggers.push(
         gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, scrollTrigger: stFinal }).scrollTrigger,
       );
-
-      if (videoContainers?.length) {
-        triggers.push(
-          gsap.to(videoContainers, { yPercent: 15, scrollTrigger: stFinal }).scrollTrigger,
-        );
-      }
 
       triggers.push(gsap.to(el, { filter: "blur(1px)", scrollTrigger: stFinal }).scrollTrigger);
     });
@@ -269,7 +213,7 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
             />
           </div>
 
-          <div className="hero_text">
+          <div className="hero_text text-4xl sm:text-7xl">
             <div>
               Discover.
               <br />
@@ -302,38 +246,3 @@ export default function ScrollTriggerGsapSectionReact_SingleEcom() {
     </>
   );
 }
-
-/**
- * ✅ Add this to your CSS file (IMPORTANT for mobile center):
- *
- * .hero_text {
- *   position: absolute;
- *   inset: 0;
- *   display: flex;
- *   align-items: center;
- *   justify-content: center;
- *   text-align: center;
- *   pointer-events: none;
- * }
- *
- * .hero_text > div { line-height: 1.05; }
- *
- * @media (min-width: 768px) {
- *   .hero_text {
- *     justify-content: flex-start;
- *     align-items: flex-start;
- *     text-align: left;
- *     padding: 4rem;
- *   }
- * }
- *
- * // Optional ecommerce styles:
- * .work_ecom { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
- * .work_price { font-size: 1.4rem; letter-spacing: 0.02em; opacity: 0.95; }
- * .work_actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
- * .work_cta { border-radius: 999px; padding: 0.8rem 1.1rem; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.25); color: white; cursor: pointer; }
- * .work_cta.primary { background: rgba(255,255,255,0.18); }
- * .work_cta:hover { transform: translateY(-1px); }
- * .work_trust { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.85rem; opacity: 0.8; }
- * .work_trust-item { border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 0.35rem 0.6rem; background: rgba(0,0,0,0.18); }
- */

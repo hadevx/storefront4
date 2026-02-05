@@ -275,7 +275,7 @@ body {
 
   padding: 0; /* ✅ remove left padding that pushes it */
   font-family: Spacegrotesk, sans-serif;
-  font-size: 12.5vw;
+  /* font-size: 12.5vw; */
   font-weight: 500;
   line-height: 0.9;
 }

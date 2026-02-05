@@ -124,7 +124,7 @@ export default function FeaturedProducts({ products, isLoading }) {
             </motion.div>
 
             {/* Bottom CTA */}
-            <div className="mt-12 lg:mt-20 px-2">
+            <div className="mt-12 lg:mt-20 px-5 rounded-md sm:px-40">
               <div className="relative overflow-hidden bg-white ring-1 ring-black/10">
                 <div
                   aria-hidden

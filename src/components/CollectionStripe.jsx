@@ -56,6 +56,12 @@ export default function CollectionsScrollCards() {
   const ticking = useRef(false);
 
   const totalCards = categories.length;
+
+  // ✅ Controls how much scroll is needed to move through cards
+  // Smaller = faster changes. Try 0.45 (very fast) → 0.75 (mild).
+  const SCROLL_SPEED = 0.55;
+
+  // Keep section height comfortable
   const wrapperVh = Math.max(3, totalCards + 1);
   const wrapperStyle = { height: `${wrapperVh * 100}vh` };
 
@@ -68,7 +74,10 @@ export default function CollectionsScrollCards() {
 
         const rect = sectionRef.current.getBoundingClientRect();
         const vh = window.innerHeight;
-        const scrollDistance = vh * (wrapperVh - 1);
+
+        // ✅ Faster: reduce scrollDistance using SCROLL_SPEED
+        const baseDistance = vh * (wrapperVh - 1);
+        const scrollDistance = Math.max(1, baseDistance * SCROLL_SPEED);
 
         let progress = 0;
         if (rect.top <= 0) {
@@ -110,7 +119,6 @@ export default function CollectionsScrollCards() {
     </div>
   );
 
-  // progress values for horizontal line
   const progressPct = totalCards > 0 ? ((activeIndex + 1) / totalCards) * 100 : 0;
 
   return (
@@ -124,21 +132,19 @@ export default function CollectionsScrollCards() {
               Scroll to explore categories. Tap any card to enter.
             </p>
 
-            {/* ✅ Horizontal progress line */}
+            {/* Horizontal progress line */}
             <div className="mt-6 w-full max-w-2xl">
               <div className="relative h-1 w-full rounded-full bg-black/15 overflow-hidden">
                 <div
-                  className="absolute left-0 top-0 h-full bg-black transition-[width] duration-300"
+                  className="absolute left-0 top-0 h-full bg-black transition-[width] duration-200"
                   style={{ width: `${progressPct}%` }}
                 />
-                {/* moving dot */}
                 <div
-                  className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-black transition-[left] duration-300"
+                  className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-black transition-[left] duration-200"
                   style={{ left: `calc(${progressPct}% - 4px)` }}
                 />
               </div>
 
-              {/* optional: current label + counter */}
               <div className="mt-3 flex items-center justify-between text-sm">
                 <span className="text-black/60">
                   {loading ? "Loading…" : `${activeIndex + 1} / ${Math.max(1, totalCards)}`}
@@ -172,7 +178,7 @@ export default function CollectionsScrollCards() {
                       transform: `translateY(${translateY}px) scale(${scale})`,
                       opacity,
                       transition:
-                        "transform 520ms cubic-bezier(0.19,1,0.22,1), opacity 520ms cubic-bezier(0.19,1,0.22,1)",
+                        "transform 420ms cubic-bezier(0.19,1,0.22,1), opacity 420ms cubic-bezier(0.19,1,0.22,1)",
                       willChange: "transform, opacity",
                       pointerEvents: opacity > 0.8 ? "auto" : "none",
                     }}>
@@ -187,7 +193,6 @@ export default function CollectionsScrollCards() {
                         <h3 className="text-2xl sm:text-3xl md:text-4xl text-white font-bold">
                           {c.label}
                         </h3>
-
                         <p className="mt-3 text-white/80 max-w-lg">
                           Discover pieces curated for{" "}
                           <span className="font-semibold text-white">{c.label}</span>.
@@ -195,7 +200,6 @@ export default function CollectionsScrollCards() {
                       </div>
                     </div>
 
-                    {/* grain */}
                     <div
                       aria-hidden
                       className="pointer-events-none absolute inset-0 opacity-[0.14] mix-blend-overlay"
