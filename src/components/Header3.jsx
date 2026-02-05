@@ -1,8 +1,57 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Search, ShoppingBag, Menu, X, User } from "lucide-react";
+import { Search, ShoppingBag, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+
+/* ✅ Icon like your image (rounded square + 2x2 dots) */
+function GridHamburgerIcon({ open = false, light = false }) {
+  const bg = light ? "bg-white/15 ring-white/15" : "bg-neutral-900 ring-white/10";
+  const dot = light ? "bg-white" : "bg-white";
+  const xStroke = light ? "stroke-white" : "stroke-white";
+
+  return (
+    <div
+      className={[
+        "size-10 rounded-xl grid place-items-center",
+        "ring-1 shadow-[0_14px_40px_rgba(0,0,0,0.18)]",
+        "transition-all duration-300",
+        bg,
+      ].join(" ")}>
+      <AnimatePresence mode="wait" initial={false}>
+        {!open ? (
+          <motion.div
+            key="grid"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.18 }}
+            className="grid grid-cols-2 gap-[5px]">
+            <span className={`h-[7px] w-[7px] rounded-[3px] ${dot}`} />
+            <span className={`h-[7px] w-[7px] rounded-[3px] ${dot}`} />
+            <span className={`h-[7px] w-[7px] rounded-[3px] ${dot}`} />
+            <span className={`h-[7px] w-[7px] rounded-[3px] ${dot}`} />
+          </motion.div>
+        ) : (
+          <motion.svg
+            key="x"
+            initial={{ opacity: 0, rotate: -10, scale: 0.9 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, rotate: 10, scale: 0.9 }}
+            transition={{ duration: 0.18 }}
+            viewBox="0 0 24 24"
+            className={`h-5 w-5 ${xStroke}`}
+            fill="none"
+            strokeWidth="2"
+            strokeLinecap="round">
+            <path d="M6 6L18 18" />
+            <path d="M18 6L6 18" />
+          </motion.svg>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Navigation() {
   const navigate = useNavigate();
@@ -81,7 +130,7 @@ export default function Navigation() {
    * ✅ Colors:
    * - Home "/" at top (not scrolled): white text/icons (transparent header)
    * - Home "/" when scrolled: black text/icons (glass header)
-   * - Any other route (/cart, /products, etc.): ALWAYS black text/icons
+   * - Any other route: ALWAYS black text/icons
    */
   const useLightText = isHome && !isScrolled;
 
@@ -91,9 +140,6 @@ export default function Navigation() {
     : "text-foreground/60 hover:text-foreground";
   const iconColor = useLightText ? "text-white" : "text-foreground";
 
-  // ✅ Header background behavior:
-  // - Home: transparent at top, becomes glass on scroll
-  // - Other routes: always white + border
   const headerClass = `fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
     isHome
       ? isScrolled
@@ -111,17 +157,15 @@ export default function Navigation() {
         className={headerClass}>
         <nav className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex h-16 lg:h-20 items-center justify-between">
-            {/* Mobile menu button */}
-            <button
+            {/* ✅ Mobile menu button (NEW style like your image) */}
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              whileHover={{ y: -1 }}
               onClick={() => setIsMenuOpen((v) => !v)}
-              className={`lg:hidden p-2 -ml-2 transition-colors duration-500 ${iconColor}`}
+              className="lg:hidden -ml-2 p-2"
               aria-label="Toggle menu">
-              {isMenuOpen ? (
-                <X className="h-5 w-5 stroke-[1.5]" />
-              ) : (
-                <Menu className="h-5 w-5 stroke-[1.5]" />
-              )}
-            </button>
+              <GridHamburgerIcon open={isMenuOpen} light={useLightText} />
+            </motion.button>
 
             {/* Desktop navigation */}
             <div className="hidden lg:flex items-center gap-12">
@@ -148,7 +192,7 @@ export default function Navigation() {
 
             {/* Right icons */}
             <div className="flex items-center gap-2 lg:gap-4">
-              {/* Search */}
+              {/* Search (kept hidden as you had button commented) */}
               <div ref={searchContainerRef} className="relative hidden sm:flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
@@ -173,19 +217,6 @@ export default function Navigation() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-
-                {/*
-                <button
-                  onClick={() => setIsSearchOpen((v) => !v)}
-                  aria-label="Search"
-                  className={`p-2 transition-colors duration-500 ${iconColor}`}>
-                  {isSearchOpen ? (
-                    <X className="h-5 w-5 stroke-[1.5]" />
-                  ) : (
-                    <Search className="h-5 w-5 stroke-[1.5]" />
-                  )}
-                </button>
-                */}
               </div>
 
               {/* Account */}
@@ -196,13 +227,12 @@ export default function Navigation() {
                 <User className="h-5 w-5 stroke-[1.5]" />
               </Link>
 
-              {/* Cart (Redux count) */}
+              {/* Cart */}
               <button
                 onClick={() => navigate("/cart")}
                 aria-label="Shopping cart"
                 className={`p-2 -mr-2 relative transition-colors duration-500 ${iconColor}`}>
                 <ShoppingBag className="h-5 w-5 stroke-[1.5]" />
-
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full text-[10px] flex items-center justify-center bg-rose-500 text-white">
                     {cartCount}
@@ -237,12 +267,15 @@ export default function Navigation() {
               className="fixed inset-y-0 left-0 w-[280px] z-50 bg-white border-r border-border lg:hidden">
               <div className="flex items-center justify-between h-16 px-6 border-b border-border">
                 <span className="font-serif text-lg tracking-[0.2em] uppercase">Menu</span>
-                <button
+
+                {/* ✅ Close button matches new style */}
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => setIsMenuOpen(false)}
                   className="p-2 -mr-2"
                   aria-label="Close menu">
-                  <X className="h-5 w-5 stroke-[1.5]" />
-                </button>
+                  <GridHamburgerIcon open={true} light={false} />
+                </motion.button>
               </div>
 
               <nav className="px-6 py-8 flex flex-col gap-6">
@@ -270,7 +303,6 @@ export default function Navigation() {
                     {userInfo ? "Profile" : "Login"}
                   </Link>
 
-                  {/* Mobile cart shortcut */}
                   <button
                     type="button"
                     onClick={() => {
