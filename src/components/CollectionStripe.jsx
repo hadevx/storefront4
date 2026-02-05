@@ -1,46 +1,28 @@
-import { useMemo, useState, useEffect, useRef } from "react";
-import Reveal from "./Reveal";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   useGetAllProductsQuery,
   useGetCategoriesTreeQuery,
   useGetMainCategoriesWithCountsQuery,
 } from "../redux/queries/productApi";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Heart } from "lucide-react";
-import { motion, useMotionValue, animate } from "framer-motion";
-import clsx from "clsx";
-import gsap from "gsap";
 
 const formatLabel = (name = "") => String(name).trim() || "Unknown";
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
+function buildCategories(categoryTree, products, mainCategoriesWithCounts) {
+  const tree = Array.isArray(categoryTree) ? categoryTree : [];
+  const prods = Array.isArray(products) ? products : [];
+  const counts = Array.isArray(mainCategoriesWithCounts) ? mainCategoriesWithCounts : [];
 
-/**
- * ENHANCED CollectionStrip
- * - Adds luxury animated SVG hairlines (very subtle)
- * - Adds GSAP hover parallax (image + sheen) on cards
- * - Adds snap-to-card on resize and better drag end snapping
- * - Keeps your dark hero-consistent design
- */
-export function CollectionStrip() {
-  const { data: products } = useGetAllProductsQuery();
-  const { data: categoryTree } = useGetCategoriesTreeQuery();
-  const { data: mainCategoriesWithCounts } = useGetMainCategoriesWithCountsQuery();
-  const navigate = useNavigate();
-
-  const categories = useMemo(() => {
-    const tree = Array.isArray(categoryTree) ? categoryTree : [];
-    const prods = Array.isArray(products) ? products : [];
-    const counts = Array.isArray(mainCategoriesWithCounts) ? mainCategoriesWithCounts : [];
-
-    return tree.map((category) => {
+  return tree
+    .map((category) => {
       const label = formatLabel(category?.name);
       const count = counts.find((c) => String(c._id) === String(category._id))?.count || 0;
 
       const firstProduct = prods.find((p) => String(p.category) === String(category._id));
-      const image = category?.image || firstProduct?.image?.[0]?.url || "/fallback.jpg";
+      const image =
+        category?.image ||
+        firstProduct?.image?.[0]?.url ||
+        "https://images.unsplash.com/photo-1520975682071-a2d7b69f1b17?auto=format&fit=crop&w=2400&q=80";
 
       const price =
         firstProduct?.hasDiscount && firstProduct?.discountedPrice != null
@@ -52,330 +34,182 @@ export function CollectionStrip() {
       const from = price != null && !Number.isNaN(price) ? `${price.toFixed(2)} KD` : null;
 
       return { id: category._id, label, count, image, from };
-    });
-  }, [categoryTree, products, mainCategoriesWithCounts]);
+    })
+    .filter(Boolean);
+}
 
-  const hasMany = categories.length > 1;
+export default function CollectionsScrollCards() {
+  const { data: products, isLoading: loadingProducts } = useGetAllProductsQuery();
+  const { data: categoryTree, isLoading: loadingTree } = useGetCategoriesTreeQuery();
+  const { data: mainCategoriesWithCounts, isLoading: loadingCounts } =
+    useGetMainCategoriesWithCountsQuery();
 
-  const [page, setPage] = useState(0);
-  const maxPage = Math.max(0, categories.length - 1);
+  const navigate = useNavigate();
 
-  const prev = () => setPage((p) => clamp(p - 1, 0, maxPage));
-  const next = () => setPage((p) => clamp(p + 1, 0, maxPage));
+  const categories = useMemo(
+    () => buildCategories(categoryTree, products, mainCategoriesWithCounts),
+    [categoryTree, products, mainCategoriesWithCounts],
+  );
 
-  // responsive card width
-  const [cardW, setCardW] = useState(340);
+  const sectionRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const ticking = useRef(false);
+
+  const totalCards = categories.length;
+  const wrapperVh = Math.max(3, totalCards + 1);
+  const wrapperStyle = { height: `${wrapperVh * 100}vh` };
+
   useEffect(() => {
-    const setByBp = () => {
-      const w = window.innerWidth;
-      if (w >= 1024) setCardW(460);
-      else if (w >= 640) setCardW(380);
-      else setCardW(320);
+    const onScroll = () => {
+      if (ticking.current) return;
+
+      window.requestAnimationFrame(() => {
+        if (!sectionRef.current) return;
+
+        const rect = sectionRef.current.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const scrollDistance = vh * (wrapperVh - 1);
+
+        let progress = 0;
+        if (rect.top <= 0) {
+          progress = Math.min(1, Math.max(0, Math.abs(rect.top) / scrollDistance));
+        }
+
+        if (totalCards > 0) {
+          setActiveIndex(Math.min(totalCards - 1, Math.floor(progress * totalCards)));
+        }
+
+        ticking.current = false;
+      });
+
+      ticking.current = true;
     };
-    setByBp();
-    window.addEventListener("resize", setByBp);
-    return () => window.removeEventListener("resize", setByBp);
-  }, []);
 
-  const gap = 16;
-  const x = useMotionValue(0);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [totalCards, wrapperVh]);
 
-  useEffect(() => {
-    const to = -(page * (cardW + gap));
-    const controls = animate(x, to, { type: "spring", stiffness: 140, damping: 26 });
-    return () => controls.stop();
-  }, [page, cardW, x]);
+  const metaText = (c) => (c?.from ? `From ${c.from}` : `${c?.count ?? 0} items`);
+  const loading = loadingProducts || loadingTree || loadingCounts;
 
-  // keep page valid if categories count changes
-  useEffect(() => {
-    setPage((p) => clamp(p, 0, maxPage));
-  }, [maxPage]);
-
-  // swipe feel
-  const swipePower = (offset, velocity) => Math.abs(offset) * velocity;
-  const swipeConfidenceThreshold = 8000;
-
-  // snap helper
-  const snapToNearest = () => {
-    const current = x.get();
-    const nearest = Math.round(Math.abs(current) / (cardW + gap));
-    setPage(clamp(nearest, 0, maxPage));
-  };
-
-  return (
-    <section dir="ltr" className="relative w-full overflow-hidden bg-neutral-950 text-white">
-      {/* Background dotted grid */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.22) 1px, transparent 1px)",
-          backgroundSize: "18px 18px",
-          backgroundPosition: "0 0",
-        }}
-      />
-
-      {/* Vignette + glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(900px 520px at 55% 45%, rgba(255,255,255,0.07), transparent 60%), radial-gradient(700px 520px at 40% 60%, rgba(249,115,22,0.12), transparent 55%), radial-gradient(900px 520px at 50% 65%, rgba(0,0,0,0.2), rgba(0,0,0,0.85) 70%)",
-        }}
-      />
-
-      {/* Luxury hairline SVG */}
-      <LuxuryHairlines />
-
-      <Reveal>
-        <div className="relative mx-auto max-w-7xl px-6 py-14 lg:py-32">
-          {/* Header */}
-          <div className="mb-8 flex flex-col gap-5 lg:mb-10 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs text-white/80 ring-1 ring-white/10">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                Collections • Browse categories
-              </div>
-
-              <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Shop by category
-              </h2>
-
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-white/70">
-                Explore essentials by category—clean, fast, and built for daily wear.
-              </p>
-            </div>
-
-            {/* Arrows */}
-            {hasMany && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={prev}
-                  disabled={page === 0}
-                  className={clsx(
-                    "grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-white ring-1 ring-white/10 backdrop-blur transition hover:bg-white/10",
-                    page === 0 && "opacity-40 cursor-not-allowed hover:bg-white/5",
-                  )}
-                  aria-label="Previous"
-                  title="Previous">
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={page === maxPage}
-                  className={clsx(
-                    "grid h-11 w-11 place-items-center rounded-2xl bg-white/5 text-white ring-1 ring-white/10 backdrop-blur transition hover:bg-white/10",
-                    page === maxPage && "opacity-40 cursor-not-allowed hover:bg-white/5",
-                  )}
-                  aria-label="Next"
-                  title="Next">
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Carousel */}
-          <div className="relative">
-            <div className="relative overflow-hidden">
-              <motion.div
-                className="flex gap-4"
-                style={{ x }}
-                drag={hasMany ? "x" : false}
-                dragConstraints={{ left: -(maxPage * (cardW + gap)), right: 0 }}
-                dragElastic={0.08}
-                onDragEnd={(e, { offset, velocity }) => {
-                  const swipe = swipePower(offset.x, velocity.x);
-                  if (swipe < -swipeConfidenceThreshold) next();
-                  else if (swipe > swipeConfidenceThreshold) prev();
-                  else snapToNearest();
-                }}>
-                {categories.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => navigate(`/category/${c.id}`)}
-                    style={{ width: cardW }}
-                    className="shrink-0 text-left"
-                    aria-label={`Open category ${c.label}`}
-                    title={c.label}>
-                    <HeroConsistentCategoryCard item={c} />
-                  </button>
-                ))}
-              </motion.div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex items-center justify-between text-[10px] font-semibold text-white/45">
-            <span>WEBSCHEMA</span>
-            <span>★</span>
-          </div>
-        </div>
-      </Reveal>
-    </section>
-  );
-}
-
-/* ------------------------------ Luxury Hairlines (SVG) ------------------------------ */
-
-function LuxuryHairlines() {
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const glints = el.querySelectorAll("[data-glint]");
-    gsap.set(glints, { opacity: 0.12 });
-
-    const tl = gsap.timeline({ repeat: -1, defaults: { ease: "sine.inOut" } });
-    tl.to(glints, { x: 18, opacity: 0.28, duration: 3.6, stagger: 0.25 }, 0).to(
-      glints,
-      { x: 0, opacity: 0.12, duration: 3.6, stagger: 0.25 },
-      3.6,
-    );
-
-    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (mq?.matches) {
-      tl.pause(0);
-      gsap.set(glints, { opacity: 0.12, x: 0 });
-    }
-
-    return () => tl.kill();
-  }, []);
-
-  return (
-    <svg
-      ref={ref}
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      viewBox="0 0 1200 600"
-      preserveAspectRatio="none"
-      aria-hidden="true">
-      <path d="M40 120 H1160" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none" />
-      <path d="M40 520 H1160" stroke="rgba(255,255,255,0.06)" strokeWidth="1" fill="none" />
-
-      <path
-        d="M0 260 C 260 214, 520 298, 780 248 S 1020 214, 1200 252"
-        stroke="rgba(255,255,255,0.09)"
-        strokeWidth="1"
-        fill="none"
-      />
-
-      <g data-glint>
-        <circle cx="520" cy="298" r="2.2" fill="rgba(255,255,255,0.28)" />
-        <circle cx="520" cy="298" r="12" fill="rgba(249,115,22,0.10)" />
-      </g>
-      <g data-glint>
-        <circle cx="880" cy="248" r="2.2" fill="rgba(255,255,255,0.25)" />
-        <circle cx="880" cy="248" r="12" fill="rgba(249,115,22,0.08)" />
-      </g>
-      <g data-glint>
-        <circle cx="1010" cy="252" r="2.2" fill="rgba(255,255,255,0.22)" />
-        <circle cx="1010" cy="252" r="12" fill="rgba(249,115,22,0.07)" />
-      </g>
-    </svg>
-  );
-}
-
-/* ------------------------------ Card (Enhanced) ------------------------------ */
-
-function HeroConsistentCategoryCard({ item }) {
-  const metaText = item.from ? `From ${item.from}` : `${item.count} items`;
-
-  const cardRef = useRef(null);
-  const imgRef = useRef(null);
-  const sheenRef = useRef(null);
-
-  useEffect(() => {
-    // set initial
-    gsap.set(imgRef.current, { scale: 1.02 });
-    gsap.set(sheenRef.current, { xPercent: -120, opacity: 0.0 });
-  }, []);
-
-  const onEnter = () => {
-    gsap.to(imgRef.current, { scale: 1.06, duration: 0.7, ease: "power3.out" });
-    gsap.to(sheenRef.current, { xPercent: 120, opacity: 0.22, duration: 0.9, ease: "power2.out" });
-    gsap.to(cardRef.current, { y: -3, duration: 0.35, ease: "power2.out" });
-  };
-
-  const onLeave = () => {
-    gsap.to(imgRef.current, { scale: 1.02, duration: 0.7, ease: "power3.out" });
-    gsap.to(sheenRef.current, { xPercent: -120, opacity: 0.0, duration: 0.6, ease: "power2.out" });
-    gsap.to(cardRef.current, { y: 0, duration: 0.35, ease: "power2.out" });
-  };
-
-  return (
+  const BgLayer = ({ url }) => (
     <div
-      ref={cardRef}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      className={clsx(
-        "group relative overflow-hidden rounded-[28px]",
-        "bg-white/5 ring-1 ring-white/12 backdrop-blur-2xl",
-        "shadow-[0_40px_120px_rgba(0,0,0,0.70)] transition",
-      )}>
-      {/* grain overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.14] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%220.5%22/%3E%3C/svg%3E')",
-        }}
-      />
+      className="absolute inset-0 z-0"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,.86)), url('${url}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    />
+  );
 
-      <div className="relative">
-        <div className="relative aspect-[4/3] overflow-hidden">
-          <img
-            ref={imgRef}
-            src={item.image}
-            alt={item.label}
-            className="absolute inset-0 h-full w-full object-cover"
-            draggable={false}
-            loading="lazy"
-          />
+  const CardTag = ({ children }) => (
+    <div className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white ring-1 ring-white/15">
+      <span className="text-sm font-medium">{children}</span>
+    </div>
+  );
 
-          {/* luxury sheen */}
-          <div
-            ref={sheenRef}
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.12) 35%, rgba(249,115,22,0.08) 50%, rgba(255,255,255,0.10) 65%, transparent 100%)",
-              mixBlendMode: "screen",
-            }}
-          />
+  // progress values for horizontal line
+  const progressPct = totalCards > 0 ? ((activeIndex + 1) / totalCards) * 100 : 0;
 
-          {/* overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/10" />
-          <div className="absolute inset-0 shadow-[inset_0_-140px_180px_rgba(0,0,0,0.55)]" />
+  return (
+    <div ref={sectionRef} className="relative" style={wrapperStyle}>
+      <section className="sticky top-0 w-full h-screen overflow-hidden bg-white">
+        <div className="mx-auto h-full max-w-7xl px-6 lg:px-8 py-10 md:py-16 flex flex-col">
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Shop by collection</h2>
+            <p className="mt-2 text-black/60">
+              Scroll to explore categories. Tap any card to enter.
+            </p>
 
-          {/* top row */}
-          <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white ring-1 ring-white/12 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-              {metaText}
-            </div>
+            {/* ✅ Horizontal progress line */}
+            <div className="mt-6 w-full max-w-2xl">
+              <div className="relative h-1 w-full rounded-full bg-black/15 overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-black transition-[width] duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+                {/* moving dot */}
+                <div
+                  className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-black transition-[left] duration-300"
+                  style={{ left: `calc(${progressPct}% - 4px)` }}
+                />
+              </div>
 
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/12 backdrop-blur transition hover:bg-white/15">
-              <Heart className="h-4 w-4" />
+              {/* optional: current label + counter */}
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-black/60">
+                  {loading ? "Loading…" : `${activeIndex + 1} / ${Math.max(1, totalCards)}`}
+                </span>
+                <span className="font-semibold text-black/70 truncate max-w-[70%] text-right">
+                  {categories[activeIndex]?.label || "—"}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* bottom text */}
-          <div className="absolute bottom-0 left-0 right-0 p-5">
-            <h3 className="text-xl font-semibold tracking-tight text-white">{item.label}</h3>
-            <p className="mt-1 text-xs font-semibold tracking-[0.18em] text-white/70">
-              VIEW COLLECTION
-            </p>
+          {/* Cards */}
+          <div className="relative flex-1">
+            {!loading &&
+              categories.map((c, i) => {
+                const offset = i - activeIndex;
+                if (Math.abs(offset) > 2) return null;
+
+                const translateY = offset === 0 ? 10 : offset === 1 ? 55 : offset === -1 ? 95 : 200;
+                const scale = offset === 0 ? 1 : offset === 1 ? 0.96 : 0.92;
+                const opacity = offset === 0 ? 1 : offset === 1 ? 0.95 : 0.55;
+                const zIndex = 50 - Math.abs(offset) * 10;
+
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => navigate(`/category/${c.id}`)}
+                    className="absolute inset-0 cursor-pointer overflow-hidden rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.22)]"
+                    style={{
+                      zIndex,
+                      transform: `translateY(${translateY}px) scale(${scale})`,
+                      opacity,
+                      transition:
+                        "transform 520ms cubic-bezier(0.19,1,0.22,1), opacity 520ms cubic-bezier(0.19,1,0.22,1)",
+                      willChange: "transform, opacity",
+                      pointerEvents: opacity > 0.8 ? "auto" : "none",
+                    }}>
+                    <BgLayer url={c.image} />
+
+                    <div className="absolute top-4 right-4 z-20">
+                      <CardTag>{metaText(c)}</CardTag>
+                    </div>
+
+                    <div className="relative z-10 h-full flex items-end p-6 sm:p-8">
+                      <div className="max-w-xl">
+                        <h3 className="text-2xl sm:text-3xl md:text-4xl text-white font-bold">
+                          {c.label}
+                        </h3>
+
+                        <p className="mt-3 text-white/80 max-w-lg">
+                          Discover pieces curated for{" "}
+                          <span className="font-semibold text-white">{c.label}</span>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* grain */}
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 opacity-[0.14] mix-blend-overlay"
+                      style={{
+                        backgroundImage:
+                          "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%220.5%22/%3E%3C/svg%3E')",
+                      }}
+                    />
+                  </div>
+                );
+              })}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

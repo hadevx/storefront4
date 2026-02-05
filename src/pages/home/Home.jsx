@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import hero3 from "../../assets/images/hero3.webp";
 import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import FeaturedProducts from "../../components/FeaturedProducts";
-import { CollectionStrip } from "../../components/CollectionStripe";
+import CollectionStrip from "../../components/CollectionStripe";
 import { MaterialsSection } from "../../components/MaterialSection";
 import { HeroSection } from "../../components/HeroSection";
 
@@ -34,7 +34,7 @@ import SmoothScroll from "../../components/SmoothScroll";
 import { HeritageSection } from "../../components/Heritage.jsx";
 import Hussain from "../../components/Hussain.jsx";
 import Fahad from "../../components/Fahad.jsx";
-
+import SkinCare from "../../components/SkinCare.jsx";
 function Home() {
   const { data: products, isLoading, refetch } = useGetFeaturedProductsQuery();
 
@@ -50,8 +50,9 @@ function Home() {
   }, [products, refetch]);
 
   return (
-    <Layout>
-      <SmoothScroll>
+    <SmoothScroll>
+      <Layout>
+        {/* <SkinCare /> */}
         {/* <Hussain /> */}
         <Fahad />
         {/* <Luxery /> */}
@@ -68,11 +69,11 @@ function Home() {
         <FeaturedProducts products={products} isLoading={isLoading} />
         <CollectionStrip />
         {/* <HeritageSection /> */}
-      </SmoothScroll>
-      {/* <MaterialsSection /> */}
-      {/* <X /> */}
-      {/* <Y /> */}
-    </Layout>
+        {/* <MaterialsSection /> */}
+        {/* <X /> */}
+        {/* <Y /> */}
+      </Layout>
+    </SmoothScroll>
   );
 }
 
